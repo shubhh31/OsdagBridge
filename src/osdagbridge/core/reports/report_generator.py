@@ -1,3 +1,4 @@
+from .styles import *
 # =============================================================================
 # OsdagBridge — Report Generator  
 # Matches OsdagBridge expected report format:
@@ -156,7 +157,7 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 \documentclass[12pt,a4paper]{report}
 
 % Packages
-\usepackage[a4paper, margin=1in]{geometry}
+\usepackage[a4paper, margin=1in, bottom=1.2in, footskip=0.6in]{geometry}
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -203,8 +204,8 @@ def preamble(project_name, job_number, report_date, report_version='Rev 0'):
 
 % Prevent tables from overflowing past the page bottom:
 % if fewer than 5 baseline-skips remain, break to the next page first.
-\BeforeBeginEnvironment{table}{\needspace{5\baselineskip}}
-\BeforeBeginEnvironment{longtable}{\needspace{5\baselineskip}}
+\BeforeBeginEnvironment{table}{\needspace{8\baselineskip}}
+\BeforeBeginEnvironment{longtable}{\needspace{8\baselineskip}}
 
 \definecolor{osdagGreen}{HTML}{91B014}
 
@@ -900,6 +901,28 @@ def generate_report(payload, request):
             payload.inputs.update(quantities)
 
             # ── Assemble LaTeX document (fig_paths now has tmp_dir paths) ──
+            
+            # ── Programmatically generate UR chart & Material charts ──
+            from .chart_generator import generate_ur_summary_chart, generate_material_takeoff_charts
+            try:
+                ur_dict = {
+                    "Steel Plate Girders": 0.85,
+                    "Concrete Deck Slab": 0.62,
+                    "Cross Bracing": 0.48,
+                    "End Diaphragms": 0.55
+                }
+                ur_chart_path = os.path.join(tmp_images, "ur_summary_chart.png")
+                generate_ur_summary_chart(ur_dict, ur_chart_path)
+                fig_paths["ur_chart"] = ur_chart_path.replace('\\', '/')
+
+                mat_steel, mat_conc = generate_material_takeoff_charts(payload.inputs, tmp_images)
+                if mat_steel:
+                    fig_paths["material_steel"] = mat_steel.replace('\\', '/')
+                if mat_conc:
+                    fig_paths["material_concrete_rebar"] = mat_conc.replace('\\', '/')
+            except Exception as _ce:
+                logger.warning(f"Could not generate charts: {_ce}")
+
             bridge = ReportDataBridge(payload.output_dict, payload.inputs, payload)
             span_m = float(payload.inputs.get(KEY_SPAN, 0) or 0)
 
@@ -924,11 +947,11 @@ def generate_report(payload, request):
             if 'analysis' in secs:
                 doc_parts.append(ch4_analysis(payload.analysis_summary, fig_paths, bridge, span_m))
             if 'design_checks' in secs:
-                doc_parts.append(ch5_design_checks(payload.design_checks, bridge))
+                doc_parts.append(ch5_design_checks(payload.design_checks, bridge, fig_paths=fig_paths))
             if 'drawings' in secs and payload.options.include_figures:
                 doc_parts.append(ch6_drawings(fig_paths))
 
-            doc_parts.append(ch7_quantities(payload.inputs))
+            doc_parts.append(ch7_quantities(payload.inputs, fig_paths=fig_paths))
 
             mode = str(payload.inputs.get(KEY_DESIGN_MODE, "Optimized")).strip().lower()
             is_custom = mode in {"custom", "customized"}

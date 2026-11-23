@@ -1,4 +1,30 @@
-def ch7_quantities(input_dict):
+def ch7_quantities(input_dict, fig_paths=None):
+    fig_paths = fig_paths or {}
+    steel_fig = ""
+    if fig_paths.get("material_steel"):
+        p = str(fig_paths["material_steel"]).replace('\\', '/')
+        steel_fig = (
+            r"\vspace{1em}\needspace{12\baselineskip}" + "\n"
+            r"\begin{figure}[H]" + "\n"
+            r"\centering" + "\n"
+            r"\includegraphics[width=0.75\textwidth]{" + p + r"}" + "\n"
+            r"\caption{\textbf{Structural Steel Tonnage Summary (Girders, Cross Bracing, End Diaphragms)}}" + "\n"
+            r"\label{fig:material-steel}" + "\n"
+            r"\end{figure}" + "\n"
+        )
+    conc_fig = ""
+    if fig_paths.get("material_concrete_rebar"):
+        p2 = str(fig_paths["material_concrete_rebar"]).replace('\\', '/')
+        conc_fig = (
+            r"\vspace{1em}\needspace{12\baselineskip}" + "\n"
+            r"\begin{figure}[H]" + "\n"
+            r"\centering" + "\n"
+            r"\includegraphics[width=0.85\textwidth]{" + p2 + r"}" + "\n"
+            r"\caption{\textbf{Concrete Volume ($m^3$) vs. Reinforcement Steel Weight (MT)}}" + "\n"
+            r"\label{fig:material-concrete-rebar}" + "\n"
+            r"\end{figure}" + "\n"
+        )
+
     return r"""
 \chapter{Material Take-off \& Quantity Summary}
 \label{ch:material-takeoff}
@@ -11,6 +37,11 @@ def ch7_quantities(input_dict):
 \hline
 \textbf{S.N.} & \textbf{Item Description} & \textbf{Volume} & \textbf{Quantity} & \textbf{Total Volume} & \textbf{Weight (MT)} & \textbf{Total Weight (MT)} \\
 \hline
+\endfirsthead
+\hline
+\textbf{S.N.} & \textbf{Item Description} & \textbf{Volume} & \textbf{Quantity} & \textbf{Total Volume} & \textbf{Weight (MT)} & \textbf{Total Weight (MT)} \\
+\hline
+\endhead
 1 & Structural Steel (IS 2062) for Girders & """ + str(input_dict.get("steel_girders_vol_formula", "N.A.")) + r""" & """ + str(input_dict.get("steel_girders_qty", "N.A.")) + r""" & """ + str(input_dict.get("steel_girders_vol_total", "N.A.")) + r""" & """ + str(input_dict.get("steel_girders_wt_single", "N.A.")) + r""" & """ + str(input_dict.get("steel_girders_wt_total", "N.A.")) + r""" \\
 \hline
 2(a) & Cross Bracing - Top Chord & """ + str(input_dict.get("bracing_top_vol_formula", "N.A.")) + r""" & """ + str(input_dict.get("bracing_top_qty", "N.A.")) + r""" & """ + str(input_dict.get("bracing_top_vol_total", "N.A.")) + r""" & """ + str(input_dict.get("bracing_top_wt_single", "N.A.")) + r""" & """ + str(input_dict.get("bracing_top_wt_total", "N.A.")) + r""" \\
@@ -28,6 +59,5 @@ def ch7_quantities(input_dict):
 6 & Crash Barrier & """ + str(input_dict.get("crash_barrier_vol_formula", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_qty", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_vol_total", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_wt_single", "N.A.")) + r""" & """ + str(input_dict.get("crash_barrier_wt_total", "N.A.")) + r""" \\
 \hline
 \end{longtable}
-"""
-
-
+\endgroup
+""" + steel_fig + conc_fig
